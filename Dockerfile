@@ -35,14 +35,18 @@ FROM ruby:${RUBY_VERSION}-slim-trixie AS runner
 # (lib/trmnlp/transform_backend/subprocess.rb) can shell out to the
 # author's chosen runtime without a sidecar container. imagemagick on
 # trixie ships IM7 (the `magick` binary trmnlp's PNG quantizer needs).
+# firefox-esr backs PNG rendering only. Build with an empty BROWSER_PACKAGE for
+# an HTML-only image, which is what a hosted preview needs and is much smaller.
+ARG BROWSER_PACKAGE=firefox-esr
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
     imagemagick \
-    firefox-esr \
     python3 \
     nodejs \
     php-cli \
+    ${BROWSER_PACKAGE} \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -66,6 +70,10 @@ COPY db/ /app/db/
 # Put trmnlp on PATH so it is callable as a bare command in an
 # interactive shell, not only via the ENTRYPOINT.
 RUN ln -s /app/bin/trmnlp /usr/local/bin/trmnlp
+
+# A self-contained plugin so the image can serve a public demo with no volume
+# mounted. Volume-mounted use is unaffected: that still lands on /plugin.
+COPY examples/hn-stories/ /app/demo-plugin/
 
 EXPOSE 4567
 WORKDIR /plugin

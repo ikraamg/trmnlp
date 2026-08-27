@@ -26,7 +26,7 @@ module TRMNLP
         # Each live-reload SSE connection holds a Puma thread for the tab's
         # lifetime; the default 0:5 pool runs out fast with multiple tabs open.
         App.set(:server_settings, Threads: '1:16')
-        permit_all_hosts if codespaces?
+        permit_all_hosts if behind_proxy?
 
         # Finally, start the app!
         App.run!
@@ -34,8 +34,9 @@ module TRMNLP
 
       private
 
-      # Codespaces forwards the dev port through a proxy whose Host header Sinatra rejects.
-      def codespaces? = ENV['CODESPACES'] == 'true'
+      # Codespaces, and any hosting platform that terminates TLS in front of us,
+      # forward the request under their own Host header, which Sinatra rejects.
+      def behind_proxy? = ENV['CODESPACES'] == 'true' || ENV['TRMNLP_PERMIT_ALL_HOSTS'] == 'true'
 
       def permit_all_hosts
         App.set(:host_authorization, { allow_if: ->(_env) { true } })

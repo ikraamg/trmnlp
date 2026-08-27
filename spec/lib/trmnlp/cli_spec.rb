@@ -62,4 +62,17 @@ RSpec.describe TRMNLP::CLI do
       end
     end
   end
+  describe '.default_port' do
+    it 'defaults to 4567 when the environment names no port' do
+      stub_const('ENV', ENV.to_h.except('PORT'))
+
+      expect(described_class.default_port).to eq(4567)
+    end
+
+    it 'takes the port a hosting platform injects' do
+      stub_const('ENV', ENV.to_h.merge('PORT' => '10000'))
+
+      expect(described_class.default_port).to eq(10_000)
+    end
+  end
 end

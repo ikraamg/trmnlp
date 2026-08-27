@@ -53,6 +53,16 @@ RSpec.describe TRMNLP::Commands::Serve do
       end
     end
 
+    context 'behind a hosting proxy' do
+      before { stub_const('ENV', ENV.to_h.merge('TRMNLP_PERMIT_ALL_HOSTS' => 'true')) }
+
+      it 'relaxes host authorization so the proxied hostname is reachable' do
+        command.call
+
+        expect(TRMNLP::App).to have_received(:set).with(:host_authorization, anything)
+      end
+    end
+
     context 'inside GitHub Codespaces' do
       before { stub_const('ENV', ENV.to_h.merge('CODESPACES' => 'true')) }
 

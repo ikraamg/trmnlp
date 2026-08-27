@@ -22,6 +22,9 @@ module TRMNLP
     def self.in_container? = File.exist?('/.dockerenv') || File.exist?('/run/.containerenv')
     def self.default_bind = in_container? ? '0.0.0.0' : '127.0.0.1'
 
+    # Hosting platforms hand the port to the process rather than letting it choose.
+    def self.default_port = Integer(ENV.fetch('PORT', 4567))
+
     desc 'build', 'Generate static HTML files'
     method_option :png, type: :boolean, default: false, desc: 'Also render a PNG per view'
     method_option :width, type: :numeric, desc: 'PNG width in pixels (with --png)'
@@ -79,7 +82,7 @@ module TRMNLP
 
     desc 'serve', 'Start a local dev server'
     method_option :bind, type: :string, default: default_bind, aliases: '-b', desc: 'Bind address'
-    method_option :port, type: :numeric, default: 4567, aliases: '-p', desc: 'Port number'
+    method_option :port, type: :numeric, default: default_port, aliases: '-p', desc: 'Port number'
     def serve
       Commands::Serve.run(options)
     end
