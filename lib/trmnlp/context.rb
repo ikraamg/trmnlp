@@ -33,6 +33,11 @@ module TRMNLP
       end
     end
 
+    # First-seen contents of every template the markup API has overwritten, so a
+    # shared instance can be put back the way it started. A nil value records a
+    # template that did not exist before it was written.
+    def markup_originals = @markup_originals ||= {}
+
     def transform_pipeline = @transform_pipeline ||= TransformPipeline.new(config:, paths:, reporter:)
     def user_data_assembler = @user_data_assembler ||= UserDataAssembler.new(config:, paths:, transform_pipeline:)
     def renderer = @renderer ||= Renderer.new(config:, paths:, user_data_assembler:)

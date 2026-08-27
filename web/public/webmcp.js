@@ -111,6 +111,20 @@ webmcp.register = async function () {
   });
 
   await tool({
+    name: "reset_markup",
+    description:
+      "Restores every template this session overwrote to the content it had when the server " +
+      "started. Use it to undo a set_markup you regret, or to clean up a shared demo.",
+    execute: async () => {
+      const body = await (await fetch("/api/markup/reset", { method: "POST" })).json();
+      trmnlp.fetchPreview();
+      return webmcp.text(
+        body.restored.length ? `Restored: ${body.restored.join(", ")}.` : "Nothing had been changed."
+      );
+    }
+  });
+
+  await tool({
     name: "get_merge_variables",
     description:
       "Lists the merge-variable paths available to the Liquid template, with a preview of each " +

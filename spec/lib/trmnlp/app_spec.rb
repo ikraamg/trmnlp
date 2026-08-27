@@ -496,4 +496,62 @@ RSpec.describe TRMNLP::App do
       expect(last_response.status).to eq(400)
     end
   end
+  describe 'POST /api/markup/reset' do
+    let(:tmp_root) { Dir.mktmpdir }
+    let(:template) { File.join(tmp_root, 'src', 'full.liquid') }
+    let(:context) do
+      FileUtils.mkdir_p(File.join(tmp_root, 'src'))
+      File.write(File.join(tmp_root, '.trmnlp.yml'), YAML.dump({}))
+      File.write(template, '<h1>original</h1>')
+      ctx = TRMNLP::Context.new(tmp_root)
+      allow(ctx.poller).to receive(:poll_data)
+      allow(ctx.config.project).to receive(:live_render?).and_return(false)
+      ctx
+    end
+
+    after { FileUtils.remove_entry(tmp_root) }
+
+    def write_markup(view, markup)
+      post '/api/markup', { view:, markup: }.to_json, { 'CONTENT_TYPE' => 'application/json' }
+    end
+
+    it 'restores a template that was overwritten' do
+      write_markup('full', '<h1>vandalized</h1>')
+
+      post '/api/markup/reset'
+
+      expect(File.read(template)).to eq('<h1>original</h1>')
+    end
+
+    it 'names the views it restored' do
+      write_markup('full', '<h1>vandalized</h1>')
+
+      post '/api/markup/reset'
+
+      expect(JSON.parse(last_response.body)['restored']).to eq(['full'])
+    end
+
+    it 'deletes a template that did not exist before it was written' do
+      write_markup('quadrant', '<p>new</p>')
+
+      post '/api/markup/reset'
+
+      expect(File.exist?(File.join(tmp_root, 'src', 'quadrant.liquid'))).to be(false)
+    end
+
+    it 'reports nothing to restore when no markup was written' do
+      post '/api/markup/reset'
+
+      expect(JSON.parse(last_response.body)['restored']).to eq([])
+    end
+
+    it 'keeps only the first original when a view is written twice' do
+      write_markup('full', '<h1>first edit</h1>')
+      write_markup('full', '<h1>second edit</h1>')
+
+      post '/api/markup/reset'
+
+      expect(File.read(template)).to eq('<h1>original</h1>')
+    end
+  end
 end
