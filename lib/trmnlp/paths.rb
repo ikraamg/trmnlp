@@ -50,6 +50,14 @@ module TRMNLP
     # does not clobber a shared token file.
     def oauth_tokens = cache_dir.join('oauth', "#{Digest::SHA256.hexdigest(root_dir.to_s)[0, 16]}.json")
 
+    # Fetched when the image is built rather than committed, so this is often
+    # absent in a source checkout.
+    def markup_guide
+      override = ENV.fetch('TRMNLP_MARKUP_GUIDE', nil)
+
+      override ? Pathname.new(override) : gem_dir.join('data', 'template_guide.md')
+    end
+
     def render_template = Pathname.new(__dir__).join('..', '..', 'web', 'views', 'render_html.erb')
 
     def src_files = src_dir.glob('*').select(&:file?)

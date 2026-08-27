@@ -71,6 +71,11 @@ COPY db/ /app/db/
 # interactive shell, not only via the ENTRYPOINT.
 RUN ln -s /app/bin/trmnlp /usr/local/bin/trmnlp
 
+# The TRMNL template guide (usetrmnl/trmnl-agent-skills, MIT), fetched here
+# rather than committed so the repository does not carry a copy that drifts
+# from upstream, and so judging never depends on GitHub being reachable.
+ADD --chmod=644 https://raw.githubusercontent.com/usetrmnl/trmnl-agent-skills/main/skills/trmnl/references/template_guide.md /app/data/template_guide.md
+
 # A self-contained plugin so the image can serve a public demo with no volume
 # mounted. Volume-mounted use is unaffected: that still lands on /plugin.
 COPY examples/hn-stories/ /app/demo-plugin/

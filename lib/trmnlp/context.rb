@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'config'
+require_relative 'markup_guide'
 require_relative 'paths'
 require_relative 'poller'
 require_relative 'renderer'
@@ -37,6 +38,8 @@ module TRMNLP
     # shared instance can be put back the way it started. A nil value records a
     # template that did not exist before it was written.
     def markup_originals = @markup_originals ||= {}
+
+    def markup_guide = @markup_guide ||= MarkupGuide.new(paths.markup_guide)
 
     def transform_pipeline = @transform_pipeline ||= TransformPipeline.new(config:, paths:, reporter:)
     def user_data_assembler = @user_data_assembler ||= UserDataAssembler.new(config:, paths:, transform_pipeline:)

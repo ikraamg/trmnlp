@@ -51,6 +51,18 @@ module TRMNLP
         { success: true, restored: }
       end
 
+      def read_markup_guide(title)
+        guide = @context.markup_guide
+        return { available: false, sections: [] } unless guide.available?
+
+        return { available: true, sections: guide.sections.map { section_summary(it) } } if title.to_s.empty?
+
+        section = guide.find(title)
+        raise InvalidRequest, "no guide section named \"#{title}\"" unless section
+
+        { available: true, title: section.title, body: section.body }
+      end
+
       def json_response
         content_type :json
         yield.to_json
@@ -63,6 +75,8 @@ module TRMNLP
       end
 
       private
+
+      def section_summary(section) = { title: section.title, level: section.level, bytes: section.body.bytesize }
 
       def remember_original(template)
         originals = @context.markup_originals
@@ -78,6 +92,7 @@ module TRMNLP
       app.get('/api/markup') { json_response { read_markup(params[:view] || Screen::FULL.name) } }
       app.post('/api/markup') { json_response { write_markup(parse_json_object(request.body.read)) } }
       app.post('/api/markup/reset') { json_response { reset_markup } }
+      app.get('/api/markup_guide') { json_response { read_markup_guide(params[:section]) } }
     end
   end
 end

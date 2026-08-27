@@ -11,11 +11,11 @@ const webmcp = {};
 // of truncating wherever a summary is more useful than a prefix.
 webmcp.MAX_OUTPUT_CHARACTERS = 1500;
 
-webmcp.text = function (value) {
+webmcp.text = function (value, budget) {
   const body = typeof value === "string" ? value : JSON.stringify(value, null, 2);
-  const clipped = body.length > webmcp.MAX_OUTPUT_CHARACTERS
-    ? body.slice(0, webmcp.MAX_OUTPUT_CHARACTERS) +
-      `\n… truncated, ${body.length - webmcp.MAX_OUTPUT_CHARACTERS} more characters`
+  const limit = budget || webmcp.MAX_OUTPUT_CHARACTERS;
+  const clipped = body.length > limit
+    ? body.slice(0, limit) + `\n… truncated, ${body.length - limit} more characters`
     : body;
   return { content: [{ type: "text", text: clipped }] };
 };
@@ -85,10 +85,49 @@ webmcp.register = async function () {
   });
 
   await tool({
+    name: "get_markup_guide",
+    description:
+      "The TRMNL template guide: layout, typography, components, utility classes, charts, Liquid " +
+      "syntax and worked examples. Call it with no section to list the sections, then ask for one " +
+      "by title. Read the sections you need before writing markup, because TRMNL templates use a " +
+      "specific class vocabulary that ordinary HTML and CSS will not match.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        section: {
+          type: "string",
+          description: "A section title from the listing. Omit it to list every section."
+        }
+      }
+    },
+    annotations: readOnly,
+    execute: async ({ section }) => {
+      const query = section ? `?section=${encodeURIComponent(section)}` : "";
+      const response = await fetch(`/api/markup_guide${query}`);
+      const body = await response.json();
+
+      if (!response.ok) return webmcp.text(body.error);
+      if (!body.available) {
+        return webmcp.text(
+          "The template guide was not fetched into this instance. It lives at " +
+          "github.com/usetrmnl/trmnl-agent-skills."
+        );
+      }
+      if (body.sections) {
+        return webmcp.text(
+          body.sections.map((s) => `${"  ".repeat(s.level - 2)}${s.title}`).join("\n"), 4000
+        );
+      }
+      return webmcp.text(`## ${body.title}\n\n${body.body}`, 8000);
+    }
+  });
+
+  await tool({
     name: "set_markup",
     description:
       "Replaces the Liquid template source for one screen layout and reloads the preview. " +
-      "Overwrites the file, so read it with get_markup first.",
+      "Overwrites the file, so read it with get_markup first, and consult get_markup_guide "
+      + "so the markup uses TRMNL's own classes rather than generic HTML.",
     inputSchema: {
       type: "object",
       properties: {

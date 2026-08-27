@@ -12,3 +12,5 @@ __pycache__/
 *.pyc
 vendor/
 .idea
+# Fetched at image build time, never committed (see Dockerfile)
+data/

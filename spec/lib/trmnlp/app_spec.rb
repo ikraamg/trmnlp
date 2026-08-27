@@ -554,4 +554,54 @@ RSpec.describe TRMNLP::App do
       expect(File.read(template)).to eq('<h1>original</h1>')
     end
   end
+  describe 'GET /api/markup_guide' do
+    let(:tmp_root) { Dir.mktmpdir }
+    let(:guide_path) { File.join(tmp_root, 'template_guide.md') }
+    let(:context) do
+      File.write(File.join(tmp_root, '.trmnlp.yml'), YAML.dump({}))
+      File.write(guide_path, "# Guide\n\n## 5. LAYOUT SYSTEM\n\nUse the layout container.\n")
+      ctx = TRMNLP::Context.new(tmp_root)
+      allow(ctx.poller).to receive(:poll_data)
+      allow(ctx.config.project).to receive(:live_render?).and_return(false)
+      ctx
+    end
+
+    before { stub_const('ENV', ENV.to_h.merge('TRMNLP_MARKUP_GUIDE' => guide_path)) }
+
+    after { FileUtils.remove_entry(tmp_root) }
+
+    it 'lists the sections when no section is named' do
+      get '/api/markup_guide'
+
+      expect(JSON.parse(last_response.body)['sections'].first['title']).to eq('5. LAYOUT SYSTEM')
+    end
+
+    it 'returns the body of a named section' do
+      get '/api/markup_guide', section: '5. LAYOUT SYSTEM'
+
+      expect(JSON.parse(last_response.body)['body']).to eq('Use the layout container.')
+    end
+
+    it 'matches a section title regardless of case' do
+      get '/api/markup_guide', section: '5. layout system'
+
+      expect(last_response.status).to eq(200)
+    end
+
+    it 'rejects a section that does not exist' do
+      get '/api/markup_guide', section: 'nope'
+
+      expect(last_response.status).to eq(400)
+    end
+
+    context 'when the guide was never fetched' do
+      before { stub_const('ENV', ENV.to_h.merge('TRMNLP_MARKUP_GUIDE' => File.join(tmp_root, 'absent.md'))) }
+
+      it 'reports the guide as unavailable rather than failing' do
+        get '/api/markup_guide'
+
+        expect(JSON.parse(last_response.body)['available']).to be(false)
+      end
+    end
+  end
 end
