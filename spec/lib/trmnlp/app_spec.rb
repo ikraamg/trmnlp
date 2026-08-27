@@ -384,4 +384,116 @@ RSpec.describe TRMNLP::App do
       expect(context.poller).to have_received(:put_webhook).with(payload)
     end
   end
+  describe 'GET /api/markup' do
+    let(:tmp_root) { Dir.mktmpdir }
+    let(:context) do
+      FileUtils.mkdir_p(File.join(tmp_root, 'src'))
+      File.write(File.join(tmp_root, '.trmnlp.yml'), YAML.dump({}))
+      File.write(File.join(tmp_root, 'src', 'full.liquid'), '<h1>{{ title }}</h1>')
+      ctx = TRMNLP::Context.new(tmp_root)
+      allow(ctx.poller).to receive(:poll_data)
+      allow(ctx.config.project).to receive(:live_render?).and_return(false)
+      ctx
+    end
+
+    after { FileUtils.remove_entry(tmp_root) }
+
+    it 'returns the markup for the requested view' do
+      get '/api/markup?view=full'
+
+      expect(JSON.parse(last_response.body)['markup']).to eq('<h1>{{ title }}</h1>')
+    end
+
+    it 'returns an empty string for a view with no template yet' do
+      get '/api/markup?view=quadrant'
+
+      expect(JSON.parse(last_response.body)['markup']).to eq('')
+    end
+
+    it 'defaults to the full view when none is given' do
+      get '/api/markup'
+
+      expect(JSON.parse(last_response.body)['view']).to eq('full')
+    end
+
+    it 'rejects a view outside the known screens' do
+      get '/api/markup?view=nope'
+
+      expect(last_response.status).to eq(400)
+    end
+
+    it 'rejects a traversal attempt in the view name' do
+      get '/api/markup', view: '../../../../etc/passwd'
+
+      expect(last_response.status).to eq(400)
+    end
+  end
+
+  describe 'POST /api/markup' do
+    let(:tmp_root) { Dir.mktmpdir }
+    let(:template) { File.join(tmp_root, 'src', 'full.liquid') }
+    let(:context) do
+      FileUtils.mkdir_p(File.join(tmp_root, 'src'))
+      File.write(File.join(tmp_root, '.trmnlp.yml'), YAML.dump({}))
+      File.write(template, '<h1>old</h1>')
+      ctx = TRMNLP::Context.new(tmp_root)
+      allow(ctx.poller).to receive(:poll_data)
+      allow(ctx.config.project).to receive(:live_render?).and_return(false)
+      ctx
+    end
+
+    after { FileUtils.remove_entry(tmp_root) }
+
+    def post_markup(payload)
+      post '/api/markup', payload, { 'CONTENT_TYPE' => 'application/json' }
+    end
+
+    it 'writes the markup to the view template' do
+      post_markup({ view: 'full', markup: '<h1>new</h1>' }.to_json)
+
+      expect(File.read(template)).to eq('<h1>new</h1>')
+    end
+
+    it 'reports success' do
+      post_markup({ view: 'full', markup: '<h1>new</h1>' }.to_json)
+
+      expect(JSON.parse(last_response.body)['success']).to be(true)
+    end
+
+    it 'creates the template for a view that has none yet' do
+      post_markup({ view: 'quadrant', markup: '<p>hi</p>' }.to_json)
+
+      expect(File.read(File.join(tmp_root, 'src', 'quadrant.liquid'))).to eq('<p>hi</p>')
+    end
+
+    it 'accepts the shared partial' do
+      post_markup({ view: 'shared', markup: '<style></style>' }.to_json)
+
+      expect(File.read(File.join(tmp_root, 'src', 'shared.liquid'))).to eq('<style></style>')
+    end
+
+    it 'refuses to write outside the src directory' do
+      post_markup({ view: '../../../../tmp/pwned', markup: 'x' }.to_json)
+
+      expect(last_response.status).to eq(400)
+    end
+
+    it 'leaves the template untouched when the view is rejected' do
+      post_markup({ view: 'nope', markup: 'x' }.to_json)
+
+      expect(File.read(template)).to eq('<h1>old</h1>')
+    end
+
+    it 'rejects markup that is not a string' do
+      post_markup({ view: 'full', markup: { not: 'a string' } }.to_json)
+
+      expect(last_response.status).to eq(400)
+    end
+
+    it 'rejects a body that is not valid JSON' do
+      post_markup('{nope')
+
+      expect(last_response.status).to eq(400)
+    end
+  end
 end

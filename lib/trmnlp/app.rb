@@ -7,11 +7,14 @@ require 'yaml'
 
 require_relative 'context'
 require_relative 'errors'
+require_relative 'markup_api'
 require_relative 'screen_generator'
 require_relative 'screenshot'
 
 module TRMNLP
   class App < Sinatra::Base
+    register MarkupAPI
+
     # Sinatra settings
     set :views, File.join(File.dirname(__FILE__), '..', '..', 'web', 'views')
     set :public_folder, File.join(File.dirname(__FILE__), '..', '..', 'web', 'public')
