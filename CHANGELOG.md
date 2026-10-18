@@ -1,6 +1,10 @@
 
 # Changelog
 
+## Unreleased
+
+- `trmnlp lint` reports markup that wraps itself in a `view` (`no_view_wrapper`). TRMNL already puts each view in one, and in a mashup the second `view` shrinks to a thin strip, so the half and quadrant views show only their `title_bar`. `trmnlp test` passed such a recipe.
+
 ## 0.31.1
 
 - A view with no `.liquid` file draws the shared markup alone, as TRMNL does when a recipe keeps all of its markup in shared. Before, trmnlp drew "Missing template" there, so `trmnlp test` showed a blank screen for a recipe that draws on TRMNL. A view with no file and no shared markup still says "Missing template".

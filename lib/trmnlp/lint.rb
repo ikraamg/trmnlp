@@ -30,6 +30,7 @@ require_relative 'lint/checks/no_unknown_filters'
 require_relative 'lint/checks/author_contact_method'
 require_relative 'lint/checks/title_bar_outside_layout'
 require_relative 'lint/checks/no_nested_layouts'
+require_relative 'lint/checks/no_view_wrapper'
 require_relative 'lint/checks/framework_classes_exist'
 require_relative 'lint/checks/framework_prefixes_exist'
 require_relative 'lint/checks/no_external_qr_codes'
@@ -70,6 +71,7 @@ module TRMNLP
       Checks::AuthorContactMethod,
       Checks::TitleBarOutsideLayout,
       Checks::NoNestedLayouts,
+      Checks::NoViewWrapper,
       Checks::FrameworkClassesExist,
       Checks::FrameworkPrefixesExist,
       Checks::NoExternalQrCodes,

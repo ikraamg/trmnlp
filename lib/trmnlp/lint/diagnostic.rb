@@ -51,7 +51,7 @@ module TRMNLP
         when 'custom_fields_used' then project_field_locations
         when 'no_refresh_rate_field' then settings_field_locations
         when 'no_custom_filters', 'no_unknown_filters' then filter_locations
-        when 'title_bar_outside_layout', 'no_nested_layouts'
+        when 'title_bar_outside_layout', 'no_nested_layouts', 'no_view_wrapper'
           check.misplaced_elements.map { |path, element| source.element_location(path, element) }
         when 'gray_text_has_one_bit_class' then gray_text_locations
         when 'image_links_reachable' then source.locations(Regexp.union(check.unreachable_urls))
