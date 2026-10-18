@@ -148,6 +148,19 @@ RSpec::Matchers.define :have_no_overlapping_text do
   end
 end
 
+# The Framework sizes each layout to its view; one far shorter sits in a box the recipe drew itself.
+RSpec::Matchers.define :have_a_layout_that_fills_the_view do
+  match do |screen|
+    @heights = screen.layout_height
+    @heights.nil? || @heights['layout'] >= @heights['view'] * TRMNLP::Testing::LAYOUT_MIN_SHARE_OF_VIEW
+  end
+  failure_message do |screen|
+    "expected the layout to fill #{screen.inspect}, but the layout collapsed to #{@heights['layout'].round} of " \
+      "#{@heights['view'].round} px. A hand-written <div class=\"view\"> around the markup does this: TRMNL adds " \
+      'the view itself, so remove it.'
+  end
+end
+
 RSpec::Matchers.define :have_no_problems do
   match { |screen| screen.problems.empty? }
   failure_message { |screen| "expected no problems on #{screen.inspect}, but: #{screen.problems.join('; ')}" }

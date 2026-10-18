@@ -1,6 +1,10 @@
 
 # Changelog
 
+## Unreleased
+
+- `trmnlp test` fails a view whose layout is drawn at under half the view's height. A hand-written `<div class="view">` around the markup does this in a mashup: the view collapses to its title bar and the screen shows nothing, yet every example passed.
+
 ## 0.31.1
 
 - A view with no `.liquid` file draws the shared markup alone, as TRMNL does when a recipe keeps all of its markup in shared. Before, trmnlp drew "Missing template" there, so `trmnlp test` showed a blank screen for a recipe that draws on TRMNL. A view with no file and no shared markup still says "Missing template".

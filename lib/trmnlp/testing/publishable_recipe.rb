@@ -24,6 +24,9 @@ module TRMNLP
     DARK_MODE_MIN_LIGHT_IMAGE_INK_PIXELS = 16
     # Share of an image's ink its dark mode render must keep: lost icons kept 0%, the lowest one shown 17% (10-14).
     DARK_MODE_MIN_IMAGE_INK_KEPT = 0.05
+    # Share of its view's height a layout must fill: 80 recipes measured on 10-18 filled 86% or more; one wrapped in
+    # a hand-written view filled 3% to 9%.
+    LAYOUT_MIN_SHARE_OF_VIEW = 0.5
 
     # Each select and boolean field's keyname and the values it can save, from the plugin's settings.yml.
     def self.option_field_values
@@ -55,7 +58,7 @@ RSpec.shared_examples 'a publishable recipe' do |screens: TRMNLP::Testing::PUBLI
   end
 
   def draw_cleanly
-    have_no_problems.and(have_no_leaked_text)
+    have_no_problems.and(have_no_leaked_text).and(have_a_layout_that_fills_the_view)
                     .and(have_no_text_clamped_with_room_to_spare).and(have_no_overlapping_text)
   end
 

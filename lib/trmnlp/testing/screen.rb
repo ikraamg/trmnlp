@@ -133,6 +133,15 @@ module TRMNLP
           }).filter((image) => image.width >= 1 && image.height >= 1);
       JS
 
+      # The tallest layout's height and the view's, or nothing when the view has no layout.
+      LAYOUT_HEIGHT_SCRIPT = <<~JS
+        const view = document.querySelector('.view');
+        const layouts = view ? [...view.querySelectorAll('.layout')] : [];
+        if (!layouts.length) return null;
+        return { layout: Math.max(...layouts.map((el) => el.getBoundingClientRect().height)),
+                 view: view.getBoundingClientRect().height };
+      JS
+
       HIDDEN_MARK = 'data-trmnlp-hidden'
       # The DOM with every element Firefox does not draw marked, so Capybara's visible text is what is on screen.
       DRAWN_DOM_SCRIPT = <<~JS.freeze
@@ -177,6 +186,8 @@ module TRMNLP
           [image['name'], Box.new(**image.slice(*Box.members.map(&:to_s)).transform_keys(&:to_sym))]
         end
       end
+
+      def layout_height = @browser.on(self) { it.execute_script(LAYOUT_HEIGHT_SCRIPT) }
 
       def clamped_with_room = @browser.on(self) { it.execute_script(CLAMPED_WITH_ROOM_SCRIPT) }
 

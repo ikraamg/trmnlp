@@ -455,6 +455,24 @@ RSpec.describe 'trmnlp test' do
       end
     end
 
+    context 'when a view wraps itself in a hand-written view' do
+      let(:quadrant) { %(<div class="view">#{greeting_markup}<div class="title_bar">Greeting</div></div>) }
+      let(:spec_body) do
+        <<~RUBY
+          RSpec.describe 'Greeting' do
+            let(:mocks) { { 'https://api.test/*' => { json: { name: 'Ada' } } } }
+
+            it_behaves_like 'a publishable recipe', screens: [{ device: 'og_plus' }]
+          end
+        RUBY
+      end
+
+      it 'names the view whose layout collapsed' do
+        expect(run_tests.first)
+          .to include('draws the quadrant view on og_plus').and include('layout collapsed to 20 of 225 px')
+      end
+    end
+
     context 'when a view draws text over other text' do
       let(:quadrant) do
         '<div class="layout"><div style="position: relative"><span class="title">{{ greeting }}</span>' \
